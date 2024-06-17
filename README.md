@@ -11,8 +11,13 @@ sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
 sudo apt-get install libsdl2-dev
 ```
 
-Then compile by following command to link your c program and libs.
+Then compile by following command to link your C++ program and libs.
+muxing.cpp
 ```bash
-gcc -o h264Streamer h264Streamer.c -lavformat -lavcodec -lavutil -lswscale -lswresample -lSDL2 -lm -lpthread
+g++ -o muxing muxing.cpp -lavutil -lavformat -lavcodec -lswscale -lswresample
+```
+h264Streamer.cpp
+```bash
+g++ -o h264Streamer h264Streamer.cpp -lavformat -lavcodec -lavutil -lswscale -lswresample -lSDL2 -lm -lpthread
 ./h264Streamer <file>
 ```
