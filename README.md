@@ -5,10 +5,8 @@ A project for h.264 muxer &amp; player, using FFmepg library.
 You need to install [FFmepg](https://github.com/FFmpeg/FFmpeg) & [SDL2](https://github.com/libsdl-org/SDL) lib first.
 Or by apt-get install :
 ```bash
-# 安裝 FFmpeg
 sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libavdevice-dev
-
-# 安裝 SDL2
+``````bash
 sudo apt-get install libsdl2-dev
 ```
 
