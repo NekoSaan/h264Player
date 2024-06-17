@@ -31,7 +31,6 @@ int main(int argc, char **argv) {
     av_register_all();
 
 	do {
-
 		if((ret = avformat_open_input(&input_format_context, input_filename, NULL, NULL)) < 0) {
 			fprintf(stderr, "Could not open input file");
 			break;
@@ -85,6 +84,7 @@ int main(int argc, char **argv) {
 				fprintf(stderr, "Error muxing packet\n");
 				break;
 			}
+
 			av_packet_unref(&packet);
 		}
 
