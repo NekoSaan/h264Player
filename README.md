@@ -6,7 +6,8 @@ You need to install [FFmepg](https://github.com/FFmpeg/FFmpeg) & [SDL2](https://
 Or by apt-get install :
 ```bash
 sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libavdevice-dev
-``````bash
+```
+```bash
 sudo apt-get install libsdl2-dev
 ```
 
