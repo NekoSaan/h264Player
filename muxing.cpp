@@ -1,5 +1,5 @@
 /**************************************************************************
- * File: muxing.c
+ * File: muxing.cpp
  * Description: This program reads a H.264 file, then muxes it into a .MP4 
  				file. Using FFmpeg libraries, it opens the input file, reads 
  				the video stream, and writes it to the output file.
@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
 		avformat_alloc_output_context2(&output_format_context, NULL, NULL, output_filename);
 
 		video_stream = avformat_new_stream(output_format_context, NULL);
-		if(video_stream == NULL) {
+		if (video_stream == NULL) {
 			fprintf(stderr, "Failed to create video stream\n");
 			break;
 		}
@@ -63,8 +63,9 @@ int main(int argc, char **argv) {
 
 		while (1) {
 			ret = av_read_frame(input_format_context, &packet);
-			if(ret < 0)
+			if (ret < 0) {
 				break;
+			}
 
 			packet.stream_index = 0;
 			AVRational time_base1 = input_format_context->streams[0]->time_base;
@@ -80,7 +81,7 @@ int main(int argc, char **argv) {
 
 			ret = av_interleaved_write_frame(output_format_context, &packet);
 
-			if(ret < 0) {
+			if (ret < 0) {
 				fprintf(stderr, "Error muxing packet\n");
 				break;
 			}

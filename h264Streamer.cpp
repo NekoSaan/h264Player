@@ -1,5 +1,5 @@
 /**************************************************************************
- * File: h264Streamer.c
+ * File: h264Streamer.cpp
  * Description: This program reads a H.264 file and streams it to a window.
                 Using FFmpeg libraries, it opens the input file, reads the
                 video stream, and displays it in a window.
@@ -179,8 +179,71 @@ int main(int argc, char *argv[]) {
     int64_t frame_time = 0;
     int64_t frame_increment = av_rescale_q(1, AV_TIME_BASE_Q, pFormatCtx->streams[videoStream]->time_base);
 
+    bool is_paused = false;
+
     // Read frames and save first five frames to disk
-    while (av_read_frame(pFormatCtx, &packet) >= 0) {
+    while (av_read_frame(pFormatCtx, &packet) >= 0 || is_paused) {
+        // Handle SDL events
+        while (SDL_PollEvent(&event)) {
+            switch (event.type) {
+                case SDL_QUIT:
+                    SDL_DestroyTexture(texture);
+                    SDL_DestroyRenderer(renderer);
+                    SDL_DestroyWindow(screen);
+                    SDL_Quit();
+                    av_free(buffer);
+                    av_frame_free(&pFrameRGB);
+                    av_frame_free(&pFrame);
+                    avcodec_close(pCodecCtx);
+                    avformat_close_input(&pFormatCtx);
+                    return 0;
+                case SDL_KEYDOWN:
+                    switch (event.key.keysym.sym) {
+                        case SDLK_LEFT:
+                            frame_time = av_frame_get_best_effort_timestamp(pFrame) - frame_increment;
+
+                            if (frame_time < 0) {
+                                frame_time = 0;
+                            }
+
+                            if (av_seek_frame(pFormatCtx, videoStream, frame_time, AVSEEK_FLAG_BACKWARD) < 0) {
+                                fprintf(stderr, "Error seeking backward\n");
+                            }
+
+                            avcodec_flush_buffers(pCodecCtx);
+                            pFrame->pts = frame_time;
+                            break;
+                        case SDLK_RIGHT:
+                            frame_time = av_frame_get_best_effort_timestamp(pFrame) + frame_increment;
+
+                            if (frame_time > pFormatCtx->streams[videoStream]->duration) {
+                                frame_time = pFormatCtx->streams[videoStream]->duration;
+                            }
+
+                            if (av_seek_frame(pFormatCtx, videoStream, frame_time, AVSEEK_FLAG_ANY) < 0) {
+                                fprintf(stderr, "Error seeking forward\n");
+                            }
+
+                            avcodec_flush_buffers(pCodecCtx);
+                            pFrame->pts = frame_time;
+                            break;
+                        case SDLK_SPACE:
+                            is_paused = !is_paused;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (is_paused) {
+            SDL_Delay(10);
+            continue;
+        }
+
         // Is this a packet from the video stream?
         if (packet.stream_index == videoStream) {
             // Decode video frame
@@ -190,7 +253,7 @@ int main(int argc, char *argv[]) {
             if (frameFinished) {
                 // Convert the image from its native format to RGB
                 sws_scale(
-                    sws_ctx, (uint8_t const *const *)pFrame->data,
+                    sws_ctx, (uint8_t const *const *) pFrame->data,
                     pFrame->linesize, 0, pCodecCtx->height,
                     pFrameRGB->data, pFrameRGB->linesize
                 );
@@ -212,59 +275,7 @@ int main(int argc, char *argv[]) {
 
         // Free the packet that was allocated by av_read_frame
         av_packet_unref(&packet);
-
-        bool is_paused = false;
-
-        // Handle SDL events
-        while (SDL_PollEvent(&event)) {
-            switch (event.type) {
-                case SDL_QUIT:
-                    SDL_DestroyTexture(texture);
-                    SDL_DestroyRenderer(renderer);
-                    SDL_DestroyWindow(screen);
-                    SDL_Quit();
-                    av_free(buffer);
-                    av_frame_free(&pFrameRGB);
-                    av_frame_free(&pFrame);
-                    avcodec_close(pCodecCtx);
-                    avformat_close_input(&pFormatCtx);
-                    return 0;
-                    break;
-                case SDL_KEYDOWN:
-                        switch (event.key.keysym.sym) {
-                            case SDLK_LEFT:
-                                frame_time = av_frame_get_best_effort_timestamp(pFrame) - frame_increment;
-                                printf("%ld\n", frame_time);
-
-                                if (frame_time < 0) {
-                                    frame_time = 0;
-                                }
-                                
-                                av_seek_frame(pFormatCtx, videoStream, frame_time, AVSEEK_FLAG_BACKWARD);
-                                avcodec_flush_buffers(pCodecCtx);
-                                break;
-                            case SDLK_RIGHT:
-                                frame_time = av_frame_get_best_effort_timestamp(pFrame) + frame_increment;
-
-                                if (frame_time > pFormatCtx->streams[videoStream]->duration) {
-                                    frame_time = pFormatCtx->streams[videoStream]->duration;
-                                }
-
-                                av_seek_frame(pFormatCtx, videoStream, frame_time, AVSEEK_FLAG_ANY);
-                                avcodec_flush_buffers(pCodecCtx);
-                                break;
-                            case SDLK_SPACE:
-                                is_paused = !is_paused;
-                                break;
-                            default:
-                                break;
-                        }
-                        break;
-                default:
-                    break;
-            }
-        }
-    } 
+    }
 
     // Free the RGB image
     av_free(buffer);
